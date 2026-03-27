@@ -1,0 +1,12 @@
+# Crea un .gitignore en la raíz del proyecto
+*.pyc
+__pycache__/
+*.egg-info/
+.env
+.venv/
+venv/
+db.sqlite3
+.DS_Store
+.idea/
+.vscode/
+*.log
