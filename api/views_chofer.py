@@ -14,24 +14,31 @@ from .serializers import (
     DocumentoUsuarioSerializer, TicketSoporteSerializer, NotificacionSerializer
 )
 
+from .authentication import JWTAuthentication
+
 class ChoferRequiredMixin:
     """Valida que el usuario sea chofer y esté activo."""
-    permission_classes = [IsAuthenticated]
+    # AllowAny because we validate the JWT manually inside get_chofer
+    permission_classes = [] 
 
     def get_chofer(self, request):
-        try:
-            usuario = Usuario.objects.get(id=request.user.id, role='chofer', activo=True)
-            if not usuario.verificado or not usuario.activo_chofer:
-                return None, Response(
-                    {'error': 'Tu cuenta de chofer no está verificada o está inactiva.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            return usuario, None
-        except Usuario.DoesNotExist:
+        usuario, error = JWTAuthentication.obtener_usuario_de_request(request)
+        if error:
+            return None, error
+            
+        if usuario.role != 'chofer':
             return None, Response(
                 {'error': 'Acceso denegado. Se requiere cuenta de chofer.'},
                 status=status.HTTP_403_FORBIDDEN
             )
+            
+        if not usuario.verificado or not usuario.activo_chofer:
+            return None, Response(
+                {'error': 'Tu cuenta de chofer no está verificada o está inactiva.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        return usuario, None
 
 # ===============================================
 # GESTIÓN DE VIAJES (RENTALES)
